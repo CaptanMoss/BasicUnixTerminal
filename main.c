@@ -107,6 +107,7 @@ void information()
     printf("\t[ touch ] -- Creating a file\n");
     printf("\t[ mkdir ] -- Creating a folder\n\n");
     printf("\t[ vim ] -- Write to file\n\n");
+    printf("\t[ help ] -- Support\n\n");
     printf("If you type help, you can see help options again\n\n");
 }
 struct directory * createDirectory(struct directory *temp,int x)
