@@ -1,3 +1,40 @@
+/*
+
+    Fixed some vulnerabilities
+
+                      Sample:  main.c rmfile() function        
+[----------------------------------registers-----------------------------------]
+EAX: 0x27c 
+EBX: 0x41414141 ('AAAA')
+ECX: 0x7ffffda1 
+EDX: 0xf7fb5870 --> 0x0 
+ESI: 0x1 
+EDI: 0xf7fb4000 --> 0x1b2db0 
+EBP: 0x41414141 ('AAAA')
+ESP: 0xffffd2a0 ('A' <repeats 200 times>...)
+EIP: 0x41414141 ('AAAA')
+EFLAGS: 0x10282 (carry parity adjust zero SIGN trap INTERRUPT direction overflow)
+[-------------------------------------code-------------------------------------]
+Invalid $PC address: 0x41414141
+[------------------------------------stack-------------------------------------]
+0000| 0xffffd2a0 ('A' <repeats 200 times>...)
+0004| 0xffffd2a4 ('A' <repeats 200 times>...)
+0008| 0xffffd2a8 ('A' <repeats 200 times>...)
+0012| 0xffffd2ac ('A' <repeats 200 times>...)
+0016| 0xffffd2b0 ('A' <repeats 200 times>...)
+0020| 0xffffd2b4 ('A' <repeats 200 times>...)
+0024| 0xffffd2b8 ('A' <repeats 200 times>...)
+0028| 0xffffd2bc ('A' <repeats 200 times>...)
+[------------------------------------------------------------------------------]
+Legend: code, data, rodata, value
+Stopped reason: SIGSEGV
+0x41414141 in ?? ()
+gdb-peda$
+
+*/
+
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -5,6 +42,16 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#define MAX_PATH 256
+
+void checkInput(char *Input) {
+    if(strlen(Input) == 0xFF) {
+        printf("Buffer overflow atempt!\n");
+        exit(0x1);
+    }
+}
+
 
 struct directory
 {
@@ -31,7 +78,7 @@ void vim();
 
 int main()
 {
-    char _choose[20];
+    char _choose[MAX_PATH];
     struct directory *root=NULL;
     int i;
 
@@ -45,7 +92,8 @@ int main()
     while(1)
     {
         printf("root@ereborlugimli:~$ ");
-        scanf("%s",_choose);
+        scanf("%255s", _choose);
+        checkInput(_choose);
 
         if (strcmp(_choose,"cd")==0)
         {
@@ -116,7 +164,7 @@ struct directory * createDirectory(struct directory *temp,int x)
 
     if (temp != NULL)
         {
-            sprintf(temp2->x,"%s",a[x]);
+            sprintf(temp2->x,"%255s",a[x]);
             temp2->_firstChield=NULL;
             temp2->_nextChield=NULL;
 
@@ -166,7 +214,7 @@ struct directory * createDirectory(struct directory *temp,int x)
         else
         {
             temp = (struct directory*)malloc(sizeof(struct directory));
-            sprintf(temp->x,"%s",a[x]);
+            sprintf(temp->x,"%255s",a[x]);
             temp->_prev=NULL;
             temp->_firstChield=NULL;
             temp->_nextChield=NULL;
@@ -178,20 +226,23 @@ struct directory * createDirectory(struct directory *temp,int x)
 }
 void rmfolder()
 {
-    char folderName[25];
+    char folderName[MAX_PATH];
     printf("Enter the folder name : ");
-    scanf("%s",folderName);
+    scanf("%255s",folderName);
+    checkInput(folderName)
     int c=rmdir(folderName);
     if (c==1)
     {
         printf("rm: cannot remove ‘%s’: No such file or directory",folderName);
     }
 }
+
 void rmfile()
 {
-    char fileName[25];
+    char fileName[MAX_PATH];
     printf("Enter the file name : ");
-    scanf("%s",fileName);
+    scanf("%255s",fileName);
+    checkInput(fileName);
     int ret=remove(fileName);
     if (ret !=0 )
     {
@@ -200,19 +251,21 @@ void rmfile()
 }
 void vim()
 {
-    char fileName[25];
+    char fileName[MAX_PATH];
     printf("Enter the file name : ");
-    scanf("%s",fileName);
-
+    scanf("%255s",fileName);
+    checkInput(fileName);
+    
     FILE *dosya = fopen(fileName,"w");
     if (dosya == NULL)
     {
         printf("command not found\n");
         exit(1);
     }
-    char sentence[255];
+    char sentence[MAX_PATH];
     printf("Enter a sentence : ");
-    scanf("%s",sentence);
+    scanf("%255s",sentence);
+    checkInput(sentence);
     fprintf(dosya,"%s",sentence);
     fclose(dosya);
 }
@@ -288,9 +341,10 @@ void ls()
 }
 void createFolder() //mkdir
 {
-    char folderName[25];
+    char folderName[MAX_PATH];
     printf("Enter the folder name : ");
-    scanf("%s",folderName);
+    scanf("%255s",folderName);
+    checkInput(folderName);
 
     if (1 == mkdir(folderName,777))
     {
@@ -303,9 +357,10 @@ void createFolder() //mkdir
 }
 void createFile() //touch
 {
-    char fileName[25];
+    char fileName[MAX_PATH];
     printf("Enter the file name : ");
-    scanf("%s",fileName);
+    scanf("%255s",fileName);
+    checkInput(fileName);
     FILE *dosya = fopen(fileName,"w");
     if (dosya == NULL)
     {
